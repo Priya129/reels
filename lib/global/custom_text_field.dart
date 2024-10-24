@@ -1,5 +1,4 @@
 import 'package:flutter/material.dart';
-
 import 'app_colors.dart';
 
 class CustomTextField extends StatefulWidget {
@@ -12,9 +11,9 @@ class CustomTextField extends StatefulWidget {
     super.key,
     required this.controller,
     required this.hintText,
-    this.isPassword = false,
-    this.validator,
-  });
+    required this.isPassword,
+    this.validator
+});
 
   @override
   CustomTextFieldState createState() => CustomTextFieldState();
@@ -24,7 +23,7 @@ class CustomTextFieldState extends State<CustomTextField> {
   bool _obscureText = true;
 
   @override
-  Widget build(BuildContext context) {
+  Widget build(BuildContext context){
     return Container(
       decoration: BoxDecoration(
         color: AppColors.transparentColor,
@@ -40,27 +39,27 @@ class CustomTextFieldState extends State<CustomTextField> {
             border: InputBorder.none,
             focusedBorder: InputBorder.none,
             suffixIcon: widget.isPassword
-                ? IconButton(
+              ? IconButton(
               icon: Icon(
                 _obscureText
-                    ? Icons.visibility_off_outlined
+                ? Icons.visibility_off_outlined
                     : Icons.visibility_outlined,
                 color: Colors.black54,
               ),
-              onPressed: () {
+              onPressed: (){
                 setState(() {
-                  _obscureText = !_obscureText;
+                  _obscureText =! _obscureText;
                 });
               },
             )
                 : null,
           ),
           style: const TextStyle(
-              fontSize: 14,
-              fontFamily: 'Poppins'),
+            fontSize: 14,
+            fontFamily: 'Poppins'),
           validator: widget.validator,
+          ),
         ),
-      ),
-    );
+      );
   }
 }

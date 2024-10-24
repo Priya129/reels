@@ -1,14 +1,12 @@
-import 'package:flutter/material.dart';
-import 'package:firebase_auth/firebase_auth.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
+import 'package:flutter/cupertino.dart';
+import 'package:reelsapp/comment/comment_text_field.dart';
 import 'comment_card.dart';
-import 'comment_text_field.dart';
 
 class CommentSection extends StatefulWidget {
-  final String recipeId;
-
-
-  const CommentSection({Key? key, required this.recipeId}) : super(key: key);
+  final String postId;
+  const CommentSection({super.key, required this.postId});
 
   @override
   State<CommentSection> createState() => _CommentSectionState();
@@ -30,7 +28,10 @@ class _CommentSectionState extends State<CommentSection> {
   Future<void> fetchUserData() async {
     User? user = FirebaseAuth.instance.currentUser;
     if (user != null) {
-      DocumentSnapshot userDoc = await FirebaseFirestore.instance.collection('user').doc(user.uid).get();
+      DocumentSnapshot userDoc = await FirebaseFirestore.instance
+          .collection('user')
+          .doc(user.uid)
+          .get();
       if (userDoc.exists) {
         setState(() {
           currentUser = user;
@@ -42,18 +43,15 @@ class _CommentSectionState extends State<CommentSection> {
     }
   }
 
-  void _scrollToBottom() {
-    _scrollController.animateTo(
-      _scrollController.position.maxScrollExtent,
-      duration: Duration(milliseconds: 300),
-      curve: Curves.easeOut,
-    );
+  void _scrollToButtom() {
+    _scrollController.animateTo(_scrollController.position.maxScrollExtent,
+        duration: Duration(milliseconds: 300), curve: Curves.easeOut);
   }
 
   Future<void> _deleteComment(String commentId) async {
     await FirebaseFirestore.instance
         .collection('videos')
-        .doc(widget.recipeId)
+        .doc(widget.postId)
         .collection('comments')
         .doc(commentId)
         .delete();
@@ -75,53 +73,57 @@ class _CommentSectionState extends State<CommentSection> {
           child: Column(
             children: [
               Expanded(
-                child: StreamBuilder(
-                  stream: FirebaseFirestore.instance
-                      .collection('videos')
-                      .doc(widget.recipeId)
-                      .collection('comments')
-                      .orderBy('timestamp', descending: true)
-                      .snapshots(),
-                  builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
-                    if (snapshot.connectionState == ConnectionState.waiting) {
+                  child: StreamBuilder(
+                      stream: FirebaseFirestore.instance
+                          .collection('videos')
+                          .doc(widget.postId)
+                          .collection('comments')
+                          .orderBy('timestamp', descending: true)
+                          .snapshots(),
+                      builder:
+                          (context, AsyncSnapshot<QuerySnapshot> snapshot) {
+                        if (snapshot.connectionState ==
+                            ConnectionState.waiting) {}
+                        if (snapshot.hasError) {
+                          return const Center(
+                            child: Text('Error loading comments'),
+                          );
+                        }
 
-                    }
-                    if (snapshot.hasError) {
-                      return const Center(child: Text('Error loading comments'));
-                    }
-                    if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
-                      return const Center(child: Text('No comments yet'));
-                    }
-                    return ListView.builder(
-                      controller: _scrollController,
-                      itemCount: snapshot.data!.docs.length,
-                      itemBuilder: (context, index) {
-                        var commentData = snapshot.data!.docs[index];
-                        bool isOwnerOrCommenter = currentUser?.uid == commentData['userid'];
-                        return CommentCard(
-                          commentId: commentData['commentId'],
-                          recipeId: widget.recipeId,
-                          username: commentData['username'],
-                          comment: commentData['text'],
-                          profileImageUrl: commentData['imageUrl'],
-                          likes: List<String>.from(commentData['likes']),
-                          isOwnerOrCommenter: isOwnerOrCommenter,
-                          onDelete: () => _deleteComment(commentData['commentId']),
-                        );
-                      },
-                    );
-                  },
-                ),
-              ),
+                        if (!snapshot.hasData || snapshot.data!.docs.isEmpty) {
+                          return const Center(
+                            child: Text('No comments yet'),
+                          );
+                        }
+                        return ListView.builder(
+                            controller: _scrollController,
+                            itemCount: snapshot.data!.docs.length,
+                            itemBuilder: (context, index) {
+                              var commentData = snapshot.data!.docs[index];
+                              bool isOwnerOrCommenter =
+                                  currentUser?.uid == commentData['userid'];
+                              return CommentCard(
+                                  commentId: commentData['commentId'],
+                                  recipeId: widget.postId,
+                                  username: commentData['username'],
+                                  comment: commentData['text'],
+                                  profileImageUrl: commentData['imageUrl'],
+                                  likes:
+                                      List<String>.from(commentData['likes']),
+                                  isOwnerOrCommenter: isOwnerOrCommenter,
+                                  onDelete: () =>
+                                      _deleteComment(commentData['commentId']));
+                            });
+                      })),
               Padding(
-                padding: EdgeInsets.only(bottom: MediaQuery.of(context).viewInsets.bottom),
+                padding: EdgeInsets.only(
+                    bottom: MediaQuery.of(context).viewInsets.bottom),
                 child: CommentInputField(
-                  recipeId: widget.recipeId,
-                  profileImageUrl: profileImageUrl,
-                  username: username,
-                  userid: userid,
-                  onCommentSubmitted: _scrollToBottom,
-                ),
+                    profileImageUrl: profileImageUrl,
+                    recipeId: widget.postId,
+                    username: username,
+                    onCommentSubmitted: _scrollToButtom,
+                    userid: userid),
               ),
             ],
           ),

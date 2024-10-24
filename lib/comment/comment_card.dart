@@ -1,8 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
-
-import '../global/app_colors.dart';
+import 'package:flutter/material.dart';
 
 class CommentCard extends StatelessWidget {
   final String commentId;
@@ -14,21 +12,21 @@ class CommentCard extends StatelessWidget {
   final bool isOwnerOrCommenter;
   final VoidCallback onDelete;
 
-  const CommentCard({
+  const CommentCard ({
     Key? key,
     required this.commentId,
     required this.recipeId,
-    required this.username,
-    required this.comment,
-    required this.profileImageUrl,
     required this.likes,
+    required this.comment,
     required this.isOwnerOrCommenter,
     required this.onDelete,
-  }) : super(key: key);
+    required this.profileImageUrl,
+    required this.username
+}) : super(key: key);
 
   bool get isLiked {
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
+    if(user != null) {
       return likes.contains(user.uid);
     }
     return false;
@@ -36,21 +34,23 @@ class CommentCard extends StatelessWidget {
 
   Future<void> _toggleLike() async {
     final user = FirebaseAuth.instance.currentUser;
-    if (user != null) {
+    if(user != null) {
       final commentRef = FirebaseFirestore.instance
           .collection('videos')
           .doc(recipeId)
           .collection('comments')
           .doc(commentId);
 
-      if (isLiked) {
+      if(isLiked) {
         await commentRef.update({
           'likes': FieldValue.arrayRemove([user.uid]),
         });
       } else {
-        await commentRef.update({
-          'likes': FieldValue.arrayUnion([user.uid]),
-        });
+        await commentRef.update(
+          {
+            'likes': FieldValue.arrayUnion([user.uid])
+          }
+        );
       }
     }
   }
@@ -59,7 +59,7 @@ class CommentCard extends StatelessWidget {
   Widget build(BuildContext context) {
     return GestureDetector(
       onLongPress: isOwnerOrCommenter
-          ? () {
+          ? (){
         showDialog(
           context: context,
           builder: (BuildContext context) {
@@ -69,77 +69,67 @@ class CommentCard extends StatelessWidget {
               actions: [
                 TextButton(
                   child: Text('Cancel'),
-                  onPressed: () {
+                  onPressed: (){
                     Navigator.of(context).pop();
                   },
                 ),
                 TextButton(
                   child: Text('Delete'),
-                  onPressed: () {
+                  onPressed: (){
                     onDelete();
                     Navigator.of(context).pop();
                   },
-                ),
+
+                )
               ],
             );
-          },
+          }
         );
       }
-          : null,
+      : null,
       child: Padding(
-        padding: const EdgeInsets.only(left: 20.0, right: 20.0, bottom: 10),
-        child: Container(
-          decoration: BoxDecoration(
-            borderRadius: BorderRadius.circular(40),
-            color: AppColors.transparentColor,
-          ),
-          child: Padding(
-            padding: const EdgeInsets.all(8.0),
-            child: Row(
+        padding: const EdgeInsets.all(8.0),
+        child: Row(
+          crossAxisAlignment: CrossAxisAlignment.start,
+          mainAxisAlignment: MainAxisAlignment.center,
+          children: [
+            CircleAvatar(
+              radius: 20,
+              backgroundImage: NetworkImage(profileImageUrl),
+            ),
+            SizedBox(width: 10,),
+            Column(
               crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisAlignment: MainAxisAlignment.center,
               children: [
-                CircleAvatar(
-                  radius: 20,
-                  backgroundImage: NetworkImage(profileImageUrl),
-                ),
-                SizedBox(width: 10),
-                Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text(
-                      username,
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 12,
-                      ),
-                    ),
-                    const SizedBox(height: 3),
-                    Text(
-                      comment,
-                      style: const TextStyle(
-                        fontFamily: 'Poppins',
-                        fontSize: 14,
-                      ),
-                    ),
-                  ],
-                ),
-                Spacer(),
-                Row(
-                  children: [
-                    IconButton(
-                      icon: Icon(
-                        isLiked ? Icons.favorite : Icons.favorite_border,
-                        color: isLiked ? Colors.red : Colors.grey,
-                      ),
-                      onPressed: _toggleLike,
-                    ),
-                    Text(likes.length.toString()),
-                  ],
-                ),
+                Text(username,
+                style: const TextStyle(
+                  fontFamily: 'Poppins',
+                  fontSize: 12
+                ),),
+                const SizedBox(height: 3,),
+                Text(
+                  comment,
+                  style: const TextStyle(
+                    fontFamily: 'Poppins',
+                    fontSize: 14,
+                  )
+                )
               ],
             ),
-          ),
+            Spacer(),
+            Row(
+              children: [
+                IconButton(
+                  icon: Icon(
+                    isLiked? Icons.favorite : Icons.favorite_border,
+                    color: isLiked ? Colors.red : Colors.grey,
+                  ),
+                  onPressed: _toggleLike,
+                ),
+                Text(likes.length.toString()),
+              ],
+            )
+          ],
         ),
       ),
     );

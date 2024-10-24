@@ -85,18 +85,23 @@ class SearchUserScreenState extends State<SearchUserScreen> {
 
     try {
       await firestore.runTransaction((transaction) async {
-        DocumentReference currentUserRef = firestore.collection('user').doc(currentUserUid);
-        DocumentReference followeeRef = firestore.collection('user').doc(followeeUid);
+        DocumentReference currentUserRef = firestore.collection('user').doc(
+            currentUserUid);
+        DocumentReference followeeRef = firestore.collection('user').doc(
+            followeeUid);
 
-        DocumentSnapshot currentUserSnapshot = await transaction.get(currentUserRef);
+        DocumentSnapshot currentUserSnapshot = await transaction.get(
+            currentUserRef);
         DocumentSnapshot followeeSnapshot = await transaction.get(followeeRef);
 
         if (!currentUserSnapshot.exists || !followeeSnapshot.exists) {
           throw Exception('User data not found');
         }
 
-        List<String> currentFollowings = List<String>.from(currentUserSnapshot['following']);
-        List<String> followeeFollowers = List<String>.from(followeeSnapshot['followers']);
+        List<String> currentFollowings = List<String>.from(
+            currentUserSnapshot['following']);
+        List<String> followeeFollowers = List<String>.from(
+            followeeSnapshot['followers']);
 
         if (currentFollowings.contains(followeeUid)) {
           currentFollowings.remove(followeeUid);
@@ -110,88 +115,90 @@ class SearchUserScreenState extends State<SearchUserScreen> {
         transaction.update(followeeRef, {'followers': followeeFollowers});
       });
     } catch (e) {
-      print('Failed to follow/unfollow user: $e');
+      print('failed to follow/unfollow user: $e');
     }
   }
 
   @override
   Widget build(BuildContext context) {
     return Scaffold(
-      appBar: AppBar(
-        leading: const BackButton(color: AppColors.mainColor),
-        title: TextField(
-          controller: _searchController,
-          decoration: const InputDecoration(
-            hintText: 'Search users...',
-            hintStyle: TextStyle(
-              fontFamily: 'Poppins',
-              color: AppColors.mainColor,
-              fontSize: 16,
-            ),
-            border: InputBorder.none,
-          ),
-          onChanged: (value) {
-            _onSearchTextChanged();
-          },
-        ),
-      ),
-      body: _isLoading
-          ? const Center(child: CircularProgressIndicator())
-          : _errorMessage.isNotEmpty
-          ? Center(child: Text(_errorMessage))
-          : ListView.builder(
-        itemCount: _searchResults.length,
-        itemBuilder: (context, index) {
-          var userData = _searchResults[index].data() as Map<String, dynamic>;
-          String userId = _searchResults[index].id;
-          String username = userData['username'] ?? 'Unknown';
-          String imageUrl = userData['imageUrl'] ?? '';
-          bool isFollowing = (userData['followers'] as List<dynamic>)
-              .contains(FirebaseAuth.instance.currentUser!.uid);
-
-          return ListTile(
-            leading: CircleAvatar(
-              backgroundImage: imageUrl.isNotEmpty ? NetworkImage(imageUrl) : null,
-              child: imageUrl.isEmpty ? const Icon(Icons.person) : null,
-            ),
-            title: Text(username),
-            trailing: GestureDetector(
-              onTap: () {
-                _followUnfollowUser(userId);
-              },
-              child: Container(
-                height: 40,
-                width: 70,
-                decoration: BoxDecoration(
-                  borderRadius: BorderRadius.circular(10),
+        appBar: AppBar(
+          leading: const BackButton(color: AppColors.mainColor,),
+          title: TextField(
+            controller: _searchController,
+            decoration: const InputDecoration(
+                hintText: 'Search users...',
+                hintStyle: TextStyle(
+                  fontFamily: 'Poppins',
                   color: AppColors.mainColor,
+                  fontSize: 16,
                 ),
-                child: Center(
-                  child: Text(
-                    isFollowing ? 'Unfollow' : 'Follow',
-                    style: const TextStyle(
-                      color: Colors.white,
-                      fontFamily: 'Poppins',
-                      fontSize: 12,
+                border: InputBorder.none
+            ),
+            onChanged: (value) {
+              _onSearchTextChanged();
+            },
+          ),
+        ),
+        body: _isLoading
+            ? const Center(child: CircularProgressIndicator(),)
+            : _errorMessage.isNotEmpty
+            ? Center(child: Text(_errorMessage),)
+            : ListView.builder(
+            itemCount: _searchResults.length,
+            itemBuilder: (context, index) {
+              var userData = _searchResults[index].data() as Map<String,
+                  dynamic>;
+              String userId = _searchResults[index].id;
+              String username = userData['username'] ?? 'Unknown';
+              String imageUrl = userData['imageUrl'] ?? '';
+              bool isFollowing = (userData['followers'] as List<dynamic>)
+                  .contains(FirebaseAuth.instance.currentUser!.uid);
+              return ListTile(
+                leading: CircleAvatar(
+                  backgroundImage: imageUrl.isNotEmpty
+                      ? NetworkImage(imageUrl)
+                      : null,
+                  child: imageUrl.isEmpty ? const Icon(Icons.person) : null,
+                ),
+                title: Text(username),
+                trailing: GestureDetector(
+                  onTap: () {
+                    _followUnfollowUser(userId);
+                  },
+                  child: Container(
+                    height: 40,
+                    width: 70,
+                    decoration: BoxDecoration(
+                        borderRadius: BorderRadius.circular(10),
+                        color: AppColors.mainColor
+                    ),
+                    child: Center(
+                      child: Text(
+                        isFollowing ? 'Unfollow' : 'Follow',
+                        style: const TextStyle(
+                          color: Colors.white,
+                          fontFamily: 'Poppins',
+                          fontSize: 12,
+                        ),
+                      ),
                     ),
                   ),
                 ),
-              ),
-            ),
-            onTap: () {
-              Navigator.push(
-                context,
-                MaterialPageRoute(
-                  builder: (context) => ProfileScreen(
-                    userId: userId,
-                    currentUserId: currentId,
-                  ),
-                ),
+                onTap: () {
+                  Navigator.push(
+                      context,
+                      MaterialPageRoute(builder: (context) =>
+                          ProfileScreen(
+                            userId: userId,
+                            currentUserId: currentId,
+                          ))
+                  );
+                },
               );
-            },
-          );
-        },
-      ),
+            })
     );
   }
+
+
 }

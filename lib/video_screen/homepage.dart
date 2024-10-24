@@ -1,16 +1,16 @@
 import 'dart:io';
+import 'package:chewie/chewie.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
 import 'package:firebase_auth/firebase_auth.dart';
 import 'package:firebase_storage/firebase_storage.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:flutter_cache_manager/flutter_cache_manager.dart';
-import 'package:reelsapp/profile/profile_screen.dart';
+import 'package:reelsapp/comment/comment_screen.dart';
 import 'package:reelsapp/video_screen/video_shimmer.dart';
 import 'package:video_player/video_player.dart';
-import 'package:chewie/chewie.dart';
 import '../global/app_colors.dart';
-import '../comment/comment_screen.dart';
+import '../profile/profile_screen.dart';
 
 class VideoFeedScreen extends StatefulWidget {
   const VideoFeedScreen({super.key});
@@ -49,12 +49,14 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
 
   @override
   void didChangeAppLifecycleState(AppLifecycleState state) {
-    if (state == AppLifecycleState.paused || state == AppLifecycleState.inactive) {
+    if (state == AppLifecycleState.paused ||
+        state == AppLifecycleState.inactive) {
       pauseAllVideos();
     }
   }
 
-  Future<ChewieController> _initializeChewieController(String videoUrl, String postId) async {
+  Future<ChewieController> _initializeChewieController(
+      String videoUrl, String postId) async {
     var fileInfo = await DefaultCacheManager().getFileFromCache(videoUrl);
     String localPath;
 
@@ -77,10 +79,9 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
     }
 
     return ChewieController(
-      videoPlayerController: videoPlayerController,
-      autoPlay: false,
-      looping: false,
-    );
+        videoPlayerController: videoPlayerController,
+        autoPlay: false,
+        looping: false);
   }
 
   Future<Map<String, dynamic>> _fetchUserProfile(String userId) {
@@ -98,18 +99,24 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
     String currentUserUid = _firebaseAuth.currentUser!.uid;
     try {
       await _firestore.runTransaction((transaction) async {
-        DocumentReference currentUserRef = _firestore.collection('user').doc(currentUserUid);
-        DocumentReference followeeRef = _firestore.collection('user').doc(followeeUid);
+        DocumentReference currentUserRef =
+            _firestore.collection('user').doc(currentUserUid);
+        DocumentReference followeeRef =
+            _firestore.collection('user').doc(followeeUid);
 
-        DocumentSnapshot currentUserSnapshot = await transaction.get(currentUserRef);
+        DocumentSnapshot currentUserSnapshot =
+            await transaction.get(currentUserRef);
         DocumentSnapshot followeeSnapshot = await transaction.get(followeeRef);
 
         if (!currentUserSnapshot.exists || !followeeSnapshot.exists) {
           throw Exception('User data not found');
         }
 
-        List<String> currentFollowings = List<String>.from(currentUserSnapshot['followings']);
-        List<String> followeeFollowers = List<String>.from(followeeSnapshot['followers']);
+        List<String> currentFollowings =
+            List<String>.from(currentUserSnapshot['followings']);
+
+        List<String> followeeFollowers =
+            List<String>.from(followeeSnapshot['followers']);
 
         if (currentFollowings.contains(followeeUid)) {
           currentFollowings.remove(followeeUid);
@@ -126,37 +133,34 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
       });
     } catch (e) {
       ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error following/unfollowing user: $e')),
-      );
+          SnackBar(content: Text('Error following/unfollowing user: $e')));
     }
   }
 
   Future<void> _confirmDeleteVideo(String postId, String videoUrl) async {
     return showDialog<void>(
-      context: context,
-      barrierDismissible: false,
-      builder: (BuildContext context) {
-        return AlertDialog(
-          title: const Text('Delete Video'),
-          content: const Text('Are you sure you want to delete this video?'),
-          actions: <Widget>[
-            TextButton(
-              child: const Text('Cancel'),
-              onPressed: () {
-                Navigator.of(context).pop();
-              },
-            ),
-            TextButton(
-              child: const Text('Delete'),
-              onPressed: () {
-                Navigator.of(context).pop();
-                _deleteVideo(postId, videoUrl);
-              },
-            ),
-          ],
-        );
-      },
-    );
+        context: context,
+        barrierDismissible: false,
+        builder: (BuildContext context) {
+          return AlertDialog(
+            title: const Text('Delete Video'),
+            content: const Text('Are you sure you want to delete this video?'),
+            actions: <Widget>[
+              TextButton(
+                  onPressed: () {
+                    Navigator.of(context).pop();
+                  },
+                  child: const Text('Cancel')),
+              TextButton(
+                child: const Text('Delete'),
+                onPressed: () {
+                  Navigator.of(context).pop();
+                  _deleteVideo(postId, videoUrl);
+                },
+              )
+            ],
+          );
+        });
   }
 
   Future<void> _deleteVideo(String postId, String videoUrl) async {
@@ -166,12 +170,10 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
       _chewieControllers.remove(postId)?.dispose();
       setState(() {});
       ScaffoldMessenger.of(context).showSnackBar(
-        const SnackBar(content: Text('Video deleted successfully')),
-      );
+          const SnackBar(content: Text('Video deleted successfully')));
     } catch (e) {
-      ScaffoldMessenger.of(context).showSnackBar(
-        SnackBar(content: Text('Error deleting video: $e')),
-      );
+      ScaffoldMessenger.of(context)
+          .showSnackBar(SnackBar(content: Text('Error deleting video: $e')));
     }
   }
 
@@ -179,7 +181,8 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
     for (var postId in _chewieControllers.keys) {
       var controller = _chewieControllers[postId]!;
       if (controller.videoPlayerController.value.isPlaying) {
-        _videoPositions[postId] = controller.videoPlayerController.value.position;
+        _videoPositions[postId] =
+            controller.videoPlayerController.value.position;
         _videoPlayingStates[postId] = true;
         controller.pause();
       } else {
@@ -191,7 +194,6 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
   Future<void> _toggleLike(String postId) async {
     final currentUserId = _firebaseAuth.currentUser?.uid;
     if (currentUserId == null) return;
-
     final videoRef = _firestore.collection('videos').doc(postId);
     final videoDoc = await videoRef.get();
     List<dynamic> likes = List<dynamic>.from(videoDoc['likes'] ?? []);
@@ -212,7 +214,6 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
   Widget build(BuildContext context) {
     final screenWidth = MediaQuery.of(context).size.width;
     final screenHeight = MediaQuery.of(context).size.height;
-
     return Scaffold(
       appBar: AppBar(
         title: const Text(
@@ -227,16 +228,22 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
           statusBarIconBrightness: Brightness.dark,
         ),
         leading: IconButton(
-          icon: const Icon(Icons.arrow_back, color: AppColors.mainColor),
+          icon: const Icon(
+            Icons.arrow_back,
+            color: AppColors.mainColor,
+          ),
           onPressed: () {
             pauseAllVideos();
           },
         ),
       ),
       body: Container(
-        color: Colors.black, // Set the background color to black
+        color: Colors.black,
         child: StreamBuilder(
-          stream: _firestore.collection('videos').orderBy('createdAt', descending: true).snapshots(),
+          stream: _firestore
+              .collection('videos')
+              .orderBy('createdAt', descending: true)
+              .snapshots(),
           builder: (context, AsyncSnapshot<QuerySnapshot> snapshot) {
             if (!snapshot.hasData) {
               return const VideoShimmer();
@@ -245,26 +252,29 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
 
             return PageView.builder(
               controller: _pageController,
-              scrollDirection: Axis.vertical,
               onPageChanged: (index) {
                 pauseAllVideos();
               },
+              scrollDirection: Axis.vertical,
               itemBuilder: (context, index) {
                 var videoDoc = videoDocs[index];
                 var postId = videoDoc.id;
+                var description = videoDoc['decsription'];
                 var videoUrl = videoDoc['videoUrl'];
-                var description = videoDoc['description'];
                 var userId = videoDoc['userId'];
                 var isCurrentUser = userId == _firebaseAuth.currentUser?.uid;
                 return FutureBuilder<ChewieController>(
                   future: _initializeChewieController(videoUrl, postId),
                   builder: (context, chewieSnapshot) {
                     if (!chewieSnapshot.hasData) {
-                      return const Center(child: VideoShimmer());
+                      return const Center(
+                        child: VideoShimmer(),
+                      );
                     }
                     var chewieController = chewieSnapshot.data!;
                     _chewieControllers[postId] = chewieController;
-                    _videoLikes[postId] ??= (videoDoc['likes'] as List).contains(_firebaseAuth.currentUser?.uid);
+                    _videoLikes[postId] ??= (videoDoc['likes'] as List)
+                        .contains(_firebaseAuth.currentUser?.uid);
                     return Stack(
                       children: [
                         Center(
@@ -286,98 +296,131 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
                               Row(
                                 children: [
                                   FutureBuilder<Map<String, dynamic>>(
-                                    future: _fetchUserProfile(userId),
-                                    builder: (context, userProfileSnapshot) {
-                                      if (!userProfileSnapshot.hasData) {
-                                        return const CircularProgressIndicator();
-                                      }
-                                      var userProfile = userProfileSnapshot.data!;
-                                      var profileImageUrl = userProfile['imageUrl'] ?? '';
-                                      var username = userProfile['username'] ?? 'User';
+                                      future: _fetchUserProfile(userId),
+                                      builder: (context, userProfileSnapshot) {
+                                        if (!userProfileSnapshot.hasData) {
+                                          return const CircularProgressIndicator();
+                                        }
+                                        var userProfile =
+                                            userProfileSnapshot.data!;
+                                        var profileImageUrl =
+                                            userProfile['imageUrl'] ?? '';
+                                        var username =
+                                            userProfile['username'] ?? 'User';
 
-                                      return GestureDetector(
-                                        onTap: () {
-                                          Navigator.push(
-                                            context,
-                                            MaterialPageRoute(
-                                                builder: (context) => ProfileScreen(
-                                                  userId: userId,
-                                                  currentUserId: _firebaseAuth.currentUser!.uid,
-                                                )),
-                                          );
-                                          pauseAllVideos();
-                                        },
-                                        child: Row(
-                                          children: [
-                                            CircleAvatar(
-                                              backgroundImage: profileImageUrl.isNotEmpty
-                                                  ? NetworkImage(profileImageUrl)
-                                                  : const AssetImage('assets/default_profile.png')
-                                              as ImageProvider,
-                                              radius: 24,
-                                            ),
-                                            const SizedBox(width: 8),
-                                            Center(
-                                              child: Text(
-                                                username,
-                                                style: const TextStyle(
-                                                    color: Colors.white,
-                                                    fontSize: 20,
-                                                    fontFamily: 'Poppins'),
+                                        return GestureDetector(
+                                          onTap: () {
+                                            Navigator.push(
+                                                context,
+                                                MaterialPageRoute(
+                                                    builder: (context) =>
+                                                        ProfileScreen(
+                                                          userId: userId,
+                                                          currentUserId:
+                                                              _firebaseAuth
+                                                                  .currentUser!
+                                                                  .uid,
+                                                        )));
+                                            pauseAllVideos();
+                                          },
+                                          child: Row(
+                                            children: [
+                                              CircleAvatar(
+                                                backgroundImage: profileImageUrl
+                                                        .isNotEmpty
+                                                    ? NetworkImage(
+                                                        profileImageUrl)
+                                                    : const AssetImage(
+                                                            'assets/default_profile.png')
+                                                        as ImageProvider,
+                                                radius: 24,
                                               ),
-                                            ),
-                                            const SizedBox(width: 8),
-                                            if (!isCurrentUser)
-                                              ValueListenableBuilder<bool>(
-                                                valueListenable: _isFollowingMap[userId]!,
-                                                builder: (context, isFollowing, child) {
-                                                  return GestureDetector(
-                                                    onTap: () => _followUnfollowUser(userId),
-                                                    child: Container(
-                                                      padding: const EdgeInsets.symmetric(
-                                                          vertical: 4, horizontal: 8),
-                                                      decoration: BoxDecoration(
-                                                        color: isFollowing
-                                                            ? Colors.white
-                                                            : Colors.transparent,
-                                                        border: Border.all(color: Colors.white),
-                                                        borderRadius: BorderRadius.circular(4),
-                                                      ),
-                                                      child: Text(
-                                                        isFollowing ? 'Following' : 'Follow',
-                                                        style: TextStyle(
-                                                          color: isFollowing
-                                                              ? AppColors.mainColor
-                                                              : Colors.white,
-                                                          fontSize: 12,
-                                                          fontFamily: 'Poppins',
+                                              const SizedBox(
+                                                width: 8,
+                                              ),
+                                              Center(
+                                                child: Text(username,
+                                                    style: const TextStyle(
+                                                        color: Colors.white,
+                                                        fontSize: 20,
+                                                        fontFamily: 'Poppins')),
+                                              ),
+                                              const SizedBox(
+                                                width: 8,
+                                              ),
+                                              if (!isCurrentUser)
+                                                ValueListenableBuilder<bool>(
+                                                    valueListenable:
+                                                        _isFollowingMap[
+                                                            userId]!,
+                                                    builder: (context,
+                                                        isFollowing, child) {
+                                                      return GestureDetector(
+                                                        onTap: () =>
+                                                            _followUnfollowUser(
+                                                                userId),
+                                                        child: Container(
+                                                          padding:
+                                                              const EdgeInsets
+                                                                  .symmetric(
+                                                                  vertical: 4,
+                                                                  horizontal:
+                                                                      8),
+                                                          decoration:
+                                                              BoxDecoration(
+                                                            color: isFollowing
+                                                                ? Colors.white
+                                                                : Colors
+                                                                    .transparent,
+                                                            border: Border.all(
+                                                                color: Colors
+                                                                    .white),
+                                                            borderRadius:
+                                                                BorderRadius
+                                                                    .circular(
+                                                                        4),
+                                                          ),
+                                                          child: Text(
+                                                            isFollowing
+                                                                ? 'Following'
+                                                                : 'Follow',
+                                                            style: TextStyle(
+                                                              color: isFollowing
+                                                                  ? AppColors
+                                                                      .mainColor
+                                                                  : Colors
+                                                                      .white,
+                                                              fontSize: 12,
+                                                              fontFamily:
+                                                                  'Poppins',
+                                                            ),
+                                                          ),
                                                         ),
-                                                      ),
-                                                    ),
-                                                  );
-                                                },
-                                              ),
-                                            if (isCurrentUser)
-                                              IconButton(
-                                                icon: const Icon(Icons.delete_outlined, color: Colors.white),
-                                                onPressed: () => _confirmDeleteVideo(postId, videoUrl),
-                                              ),
-                                          ],
-                                        ),
-
-                                      );
-                                    },
-                                  ),
+                                                      );
+                                                    }),
+                                              if (isCurrentUser)
+                                                IconButton(
+                                                  icon: const Icon(
+                                                      Icons.delete_outlined,
+                                                      color: Colors.white),
+                                                  onPressed: () =>
+                                                      _confirmDeleteVideo(
+                                                          postId, videoUrl),
+                                                )
+                                            ],
+                                          ),
+                                        );
+                                      })
                                 ],
                               ),
-                              const SizedBox(height: 5),
-                              Text(
-                                description,
-                                style: const TextStyle(
-                                    color: Colors.white,
-                                    fontSize: 14,
-                                    fontFamily: 'Poppins'),
+                              const SizedBox(
+                                height: 5,
                               ),
+                              Text(description,
+                                  style: const TextStyle(
+                                      color: Colors.white,
+                                      fontSize: 14,
+                                      fontFamily: 'Poppins'))
                             ],
                           ),
                         ),
@@ -389,8 +432,12 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
                               IconButton(
                                 icon: Icon(
                                   size: 30,
-                                  _videoLikes[postId] == true ? Icons.favorite : Icons.favorite_border,
-                                  color: _videoLikes[postId] == true ? Colors.red : Colors.white,
+                                  _videoLikes[postId] == true
+                                      ? Icons.favorite
+                                      : Icons.favorite_border,
+                                  color: _videoLikes[postId] == true
+                                      ? Colors.red
+                                      : Colors.white,
                                 ),
                                 onPressed: () {
                                   _toggleLike(postId);
@@ -404,32 +451,34 @@ class VideoFeedScreenState extends State<VideoFeedScreen>
                                   fontFamily: 'Poppins',
                                 ),
                               ),
-                              const SizedBox(height: 20),
+                              const SizedBox(
+                                height: 20,
+                              ),
                               GestureDetector(
                                 onTap: () {
                                   showModalBottomSheet(
-                                    context: context,
-                                    isScrollControlled: true,
-                                    builder: (context) =>
-                                        DraggableScrollableSheet(
-                                          expand: false,
-                                          initialChildSize: 0.8,
-                                          minChildSize: 0.3,
-                                          maxChildSize: 0.9,
-                                          builder: (context, scrollController) =>
-                                              CommentSection(recipeId: postId),
-                                        ),
-                                  );
+                                      context: context,
+                                      isScrollControlled: true,
+                                      builder: (context) =>
+                                          DraggableScrollableSheet(
+                                            expand: false,
+                                            initialChildSize: 0.8,
+                                            minChildSize: 0.3,
+                                            maxChildSize: 0.9,
+                                            builder: (context,
+                                                    scrollController) =>
+                                                CommentSection(postId: postId),
+                                          ));
                                 },
                                 child: const ImageIcon(
                                   AssetImage('assets/Images/chat-bubble.png'),
                                   size: 25,
                                   color: Colors.white,
                                 ),
-                              ),
+                              )
                             ],
                           ),
-                        ),
+                        )
                       ],
                     );
                   },

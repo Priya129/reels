@@ -7,18 +7,17 @@ import 'package:flutter/services.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:uuid/uuid.dart';
 import 'package:video_player/video_player.dart';
-
 import '../global/app_colors.dart';
 
 
-class UploadRecipeVideoScreen extends StatefulWidget {
-  const UploadRecipeVideoScreen({super.key});
+class UploadVideoScreen extends StatefulWidget {
+  const UploadVideoScreen({super.key});
 
   @override
-  State<UploadRecipeVideoScreen> createState() => _UploadRecipeVideoScreenState();
+  State<UploadVideoScreen> createState() => _UploadVideoScreenState();
 }
 
-class _UploadRecipeVideoScreenState extends State<UploadRecipeVideoScreen> {
+class _UploadVideoScreenState extends State<UploadVideoScreen> {
   Uint8List? file;
   final TextEditingController _descriptionController = TextEditingController();
   final FirebaseAuth _firebaseAuth = FirebaseAuth.instance;

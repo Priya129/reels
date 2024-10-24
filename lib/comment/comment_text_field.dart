@@ -1,7 +1,6 @@
-import 'package:flutter/material.dart';
 import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:flutter/material.dart';
 import 'package:uuid/uuid.dart';
-
 import '../global/app_colors.dart';
 
 class CommentInputField extends StatefulWidget {
@@ -11,14 +10,13 @@ class CommentInputField extends StatefulWidget {
   final String? userid;
   final Function onCommentSubmitted;
 
-  const CommentInputField({
-    Key? key,
-    required this.recipeId,
-    required this.profileImageUrl,
-    required this.username,
-    required this.userid,
-    required this.onCommentSubmitted,
-  }) : super(key: key);
+  const CommentInputField(
+      {super.key,
+      required this.profileImageUrl,
+      required this.recipeId,
+      required this.username,
+      required this.onCommentSubmitted,
+      required this.userid});
 
   @override
   _CommentInputFieldState createState() => _CommentInputFieldState();
@@ -42,9 +40,8 @@ class _CommentInputFieldState extends State<CommentInputField> {
         'userid': widget.userid,
         'commentId': commentId,
         'timestamp': FieldValue.serverTimestamp(),
-        'likes': [],
+        'likes': []
       });
-      print("Comment Submitted: ${_commentController.text}");
       _commentController.clear();
       widget.onCommentSubmitted();
     }
@@ -66,18 +63,20 @@ class _CommentInputFieldState extends State<CommentInputField> {
               CircleAvatar(
                 radius: 20,
                 backgroundImage: NetworkImage(
-                  widget.profileImageUrl ?? "https://www.example.com/valid_default_profile_image.png",
+                  widget.profileImageUrl ??
+                      "https://www.example.com/valid_default_profile_image.png",
                 ),
               ),
-              const SizedBox(width: 20),
+              const SizedBox(
+                width: 20,
+              ),
               Expanded(
                 child: TextField(
                   controller: _commentController,
                   decoration: const InputDecoration(
-                    hintStyle: TextStyle(color: Colors.black45),
-                    hintText: "Leave a comment...",
-                    border: InputBorder.none,
-                  ),
+                      hintStyle: TextStyle(color: Colors.black45),
+                      hintText: "Leave a comment....",
+                      border: InputBorder.none),
                 ),
               ),
               GestureDetector(
@@ -89,14 +88,11 @@ class _CommentInputFieldState extends State<CommentInputField> {
                   ),
                   child: const Padding(
                     padding: EdgeInsets.all(3.0),
-                    child: Icon(
-                      color: Colors.white,
-                      Icons.arrow_upward,
-                      size: 30,
-                    ),
+                    child:
+                        Icon(size: 30, Icons.arrow_upward, color: Colors.white),
                   ),
                 ),
-              ),
+              )
             ],
           ),
         ),
